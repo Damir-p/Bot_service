@@ -1,3 +1,9 @@
+import os
+import django
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Bot_service.settings')
+django.setup()
+
 import requests
 import json
 import random
@@ -8,25 +14,43 @@ from keys import API, NEWS_API, bot
 
 @bot.message_handler(commands=["start"])
 def main(message):
-    bot.send_message(message.chat.id, f"Здравствуйте, {message.from_user.first_name}. Я бот, который предоставляет информацию о погоде, новостях, \n/help для получения списка достуных команд")
+    """
+    Обработчик команды /start.
 
-    Message.objects.create(
-        user_id=message.from_user.id,
-        chat_id=message.chat.id,
-        text=message.text,
-    )
+    Бот приветствует пользователя и рассказывает о своих функциях.
+
+    Пример использования:
+    /start
+    """
+    bot.send_message(message.chat.id, f"Здравствуйте, {message.from_user.first_name}. Я бот, который предоставляет информацию о погоде, новостях, \n/help для получения списка доступных команд")
+
 
 @bot.message_handler(commands=['help'])
 def handle_start(message):
+    """
+    Обработчик команды /help.
+
+    Бот выводит список доступных команд.
+
+    Пример использования:
+    /help
+    """
     bot.send_message(message.chat.id, "Вот список доступных команд:\n"
                                       "/weather - получить информацию о погоде\n"
                                       "/news - получить последние новости\n"
                                       "/help - показать список команд\n"
                                       "/start - перезапустить бот")
 
-
 @bot.message_handler(commands=['news'])
 def send_random_news(message):
+    """
+    Обработчик команды /news.
+
+    Бот отправляет пользователю случайную новость.
+
+    Пример использования:
+    /news
+    """
     try:
         news_data = get_random_news()
         if news_data:
@@ -38,15 +62,17 @@ def send_random_news(message):
             bot.reply_to(message, "Извините, не удалось получить новости. Пожалуйста, попробуйте позже.")
     except Exception as e:
         bot.reply_to(message, "Произошла ошибка при получении новостей. Пожалуйста, попробуйте позже.")
-        
-        Message.objects.create(
-            user_id=message.from_user.id,
-            chat_id=message.chat.id,
-            text=message.text,
-        )
-
 
 def get_random_news():
+    """
+    Получение случайной новости.
+
+    Возвращает данные о случайной новости из внешнего источника.
+
+    Returns:
+        dict: Словарь с данными о случайной новости, содержащий поля "title", "description" и "url".
+              В случае ошибки или отсутствия новостей, возвращается None.
+    """
     url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={NEWS_API}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -56,14 +82,31 @@ def get_random_news():
             return random.choice(articles)
     return None
 
-
 @bot.message_handler(commands=['weather'])
 def ask_for_city(message):
+    """
+    Обработчик команды /weather.
+
+    Бот запрашивает у пользователя название города для получения погоды.
+
+    Пример использования:
+    /weather
+    """
     bot.send_message(message.chat.id, 'Чтобы узнать погоду, введите ключевые слова "погода" и "название города"')
 
 @bot.message_handler(content_types=['text'])
 def handle_weather(message):
+    """
+    Обработчик погоды.
+
+    Получает от пользователя текстовое сообщение, анализирует его и отправляет погоду в указанном городе.
+
+    Пример использования:
+    погода Москва
+    """
     text = message.text.strip().lower()
+
+    Message.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=text)
     
     if text.startswith("погода"):
         city = text[6:].strip()
@@ -89,12 +132,6 @@ def handle_weather(message):
 
         bot.send_photo(message.chat.id, image_url)
         bot.reply_to(message, f'Сейчас погода: {temp}°C, \n/help - команды')
-
-        Message.objects.create(
-            user_id=message.from_user.id,
-            chat_id=message.chat.id,
-            text=message.text,
-        )
 
 
 bot.polling(none_stop=True)
