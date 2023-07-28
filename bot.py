@@ -1,15 +1,21 @@
 import os
 import django
+from dotenv import load_dotenv,find_dotenv
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Bot_service.settings')
 django.setup()
+load_dotenv(find_dotenv())
 
 import requests
 import json
 import random
 
+from telebot import TeleBot
 from bot.models import Message
-from keys import API, NEWS_API, bot
+
+bot = TeleBot(os.getenv('TOKEN'))
+API = os.getenv('OPENWEATHERMAP_API_KEY')
+NEWS_API = os.getenv('NEWS_API_KEY')
 
 
 @bot.message_handler(commands=["start"])
